@@ -1,0 +1,14 @@
+Cadence Flash
+Copyright 2026 AI Eval Corp
+
+This product includes ModernBERT-large (answerdotai/ModernBERT-large), licensed under the Apache License 2.0.
+
+The model was trained on the following datasets:
+- BANKING77 (PolyAI), CC-BY-4.0
+- CLINC150 / clinc_oos, CC-BY-3.0
+- BoolQ (Google), CC-BY-SA-3.0
+- MultiNLI (NYU), OANC license / CC-BY-3.0 / CC-BY-SA-3.0 / MIT
+- deepset/prompt-injections, Apache-2.0
+- jackhhao/jailbreak-classification, Apache-2.0
+- LocalLLaMA/typed-decisions, Apache-2.0
+- Cadence Flash Military Messages v1 (AI Eval Corp, CC-BY-4.0), derived from US Army FM 6-99, FM 6-0, ATP 4-02.2 and FM 5-0 (Approved for public release; distribution is unlimited). Synthetic text was rephrased with Google Gemini.
