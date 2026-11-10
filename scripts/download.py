@@ -1,4 +1,4 @@
-import os, json, sys
+import os, json
 for v in ['HF_TOKEN','HUGGING_FACE_HUB_TOKEN','HUGGINGFACE_HUB_TOKEN']: os.environ.pop(v, None)
 os.environ['HF_HUB_DISABLE_IMPLICIT_TOKEN']='1'
 R=os.path.dirname(os.path.abspath(__file__)); os.environ['HF_HOME']=os.path.join(R,'hf-home')

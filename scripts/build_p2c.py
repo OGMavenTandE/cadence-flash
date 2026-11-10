@@ -133,7 +133,9 @@ norm=lambda t:re.sub(r'[^a-z0-9 ]','',t.lower()).split()
 trn=build(tr,TRPOOL,'train',dict(short=4600,noword=2000,decoy=500,balance=1350,shorthand=4000))
 tst=build(te,TEPOOL,'test',dict(short=420,noword=0,decoy=120,balance=90,shorthand=500))
 tst=[x for x in tst if x['kind']!='no_prec_word']
-probes=set(' '.join(norm(p)) for p in json.load(open(os.path.join(R,'p2c','probes.json')))+json.load(open(os.path.join(R,'p2c','chief_inputs.json'))))
+_ci=os.path.join(R,'p2c','chief_inputs.json')
+if not os.path.isfile(_ci): _ci=os.path.join(R,'p2c','probe_inputs.json')
+probes=set(' '.join(norm(p)) for p in json.load(open(os.path.join(R,'p2c','probes.json')))+json.load(open(_ci)))
 # exact-dup removal; probes never enter train
 seen=set(); T2=[]
 for x in trn:

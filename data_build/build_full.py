@@ -1,4 +1,4 @@
-import random,json,re,sys,collections as C,concurrent.futures as cf,threading
+import random,json,re,collections as C,concurrent.futures as cf,threading
 from templates import BUILDERS,SRC,warno
 from gen_lib import gem
 random.seed(2026)

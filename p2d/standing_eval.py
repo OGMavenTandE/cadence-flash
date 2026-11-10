@@ -1,6 +1,6 @@
 # Cadence Flash standing evaluation + calibration harness. CPU-safe, deterministic, same call for every retrain:
-#   python eval\standing_eval.py freeze                      # one-time: build eval\frozen\ + MANIFEST.json (refuses to overwrite)
-#   python eval\standing_eval.py run --ckpt outputs\<ckpt> --out eval\runs\<name> [--baseline eval\baseline_p2c.json] [--write-baseline eval\baseline_p2c.json]
+#   python p2d/standing_eval.py freeze                      # one-time: build p2d/frozen + MANIFEST.json (refuses to overwrite)
+#   python p2d/standing_eval.py run --ckpt outputs/<ckpt> --out p2d/runs/<name> [--baseline p2d/baseline_p2c.json] [--write-baseline p2d/baseline_p2c.json]
 # Run with CUDA_VISIBLE_DEVICES=-1 for CPU. trust_remote_code is always False.
 import os, sys, re, json, hashlib, argparse, time, math, collections
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE); FZ=os.path.join(HERE,'frozen')
@@ -22,7 +22,7 @@ TARGETS=[('frago','both_acc','>=',0.95),('fm50_p2d','both_acc','>=',0.90),('fm50
      ('decoy','prec_acc','>=',0.90),('stated_conflict_1','prec_acc','>=',0.85),('short','flash_recall','>=',0.95),('abbreviation','prec_acc','>=',0.90),('probes','pass_rate','>=',1.0)]
 # regression vs baseline: accuracy-type metrics may not drop more than max(0.01, 2*SE_baseline); ECE may not rise more than 0.02.
 def freeze():
-    if os.path.exists(os.path.join(FZ,'MANIFEST.json')): sys.exit('frozen set exists; delete eval\\frozen deliberately to rebuild')
+    if os.path.exists(os.path.join(FZ,'MANIFEST.json')): sys.exit('frozen set exists; delete p2d/frozen deliberately to rebuild')
     os.makedirs(FZ,exist_ok=True); import pandas as pd
     P2=os.path.join(ROOT,'p2','data'); P2C=os.path.join(ROOT,'p2c','data'); P2D=os.path.join(ROOT,'p2d','data')
     mil=[]
@@ -79,8 +79,8 @@ def run(a):
     dev='cpu' if a.device=='cpu' else 'cuda'
     ck=os.path.abspath(a.ckpt); labels=json.load(open(os.path.join(ck,'labels.json'))); L2I={l:i for i,l in enumerate(labels)}
     T=json.load(open(os.path.join(ck,'temperature.json'))); Tt,Tp=T.get('mil_type',1.0),T.get('mil_prec',1.0)
-    tok=AutoTokenizer.from_pretrained(ck,trust_remote_code=False)
-    model=AutoModelForSequenceClassification.from_pretrained(ck,torch_dtype=torch.float32,trust_remote_code=False,attn_implementation='sdpa').to(dev).eval()
+    tok=AutoTokenizer.from_pretrained(ck,trust_remote_code=False,local_files_only=True)
+    model=AutoModelForSequenceClassification.from_pretrained(ck,torch_dtype=torch.float32,trust_remote_code=False,local_files_only=True,use_safetensors=True,attn_implementation='sdpa').to(dev).eval()
     t0=time.time()
     @torch.no_grad()
     def logits(texts):

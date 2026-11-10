@@ -1,12 +1,18 @@
 ﻿"""Cadence Flash inference. Usage: python predict.py "message text" [--model DIR]"""
-import os, sys, json, argparse
+import os, json, argparse, math
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 HERE=os.path.dirname(os.path.abspath(__file__))
 def load(d=HERE):
-    tok=AutoTokenizer.from_pretrained(d,trust_remote_code=False)
-    model=AutoModelForSequenceClassification.from_pretrained(d,trust_remote_code=False).eval()
-    lm=json.load(open(os.path.join(d,'label_map.json'),encoding='utf-8')); T=json.load(open(os.path.join(d,'temperature.json')))['temperatures']
+    if not os.path.isdir(d): raise FileNotFoundError(d)
+    kw=dict(trust_remote_code=False,local_files_only=True)
+    tok=AutoTokenizer.from_pretrained(d,**kw)
+    model=AutoModelForSequenceClassification.from_pretrained(d,use_safetensors=True,**kw).eval()
+    with open(os.path.join(d,'label_map.json'),encoding='utf-8') as f: lm=json.load(f)
+    with open(os.path.join(d,'temperature.json'),encoding='utf-8') as f: T=json.load(f)['temperatures']
+    for h,t in T.items():
+        if isinstance(t,bool) or not isinstance(t,(int,float)) or not math.isfinite(t) or t<=0:
+            raise ValueError('invalid temperature for '+str(h))
     return tok,model,lm,T
 @torch.no_grad()
 def predict(text,tok,model,lm,T,heads=('mil_type','mil_prec'),max_len=256):

@@ -6,3 +6,5 @@ weights/
 hf-home/
 *.jsonl
 *.pdf
+.env
+.env.*

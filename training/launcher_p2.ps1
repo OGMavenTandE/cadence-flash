@@ -1,5 +1,11 @@
-param([string]$Root = (Split-Path -Parent $PSScriptRoot), [string]$Python = 'python')
-param([switch]$Smoke, [double]$Epochs = 3, [int]$MaxLen = 256, [double]$MaxMinutes = 200)
+param(
+  [string]$Root = (Split-Path -Parent $PSScriptRoot),
+  [string]$Python = 'python',
+  [switch]$Smoke,
+  [double]$Epochs = 3,
+  [int]$MaxLen = 256,
+  [double]$MaxMinutes = 200
+)
 # Cadence Flash phase 2 launcher. Whole job (train+eval) is killed at $MaxMinutes; training itself stops at MaxMinutes-30 to leave eval time.
 $G = $Root; Set-Location $G
 $liveName = if ($Smoke) { 'p2\live-smoke' } else { 'p2\live' }; $LIVE = "$G\$liveName"; New-Item -ItemType Directory -Force $LIVE | Out-Null
