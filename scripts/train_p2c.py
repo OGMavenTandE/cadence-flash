@@ -63,8 +63,8 @@ torch.manual_seed(13)
 mask=torch.full((len(groups),len(labels)),float('-inf'))
 for l,i in L2I.items(): mask[G2I[gname(l)],i]=0
 GT,GP=G2I['mil_type'],G2I['mil_prec']
-tok=AutoTokenizer.from_pretrained(INIT)
-model=AutoModelForSequenceClassification.from_pretrained(INIT,torch_dtype=torch.float32,attn_implementation='sdpa')
+tok=AutoTokenizer.from_pretrained(INIT,trust_remote_code=False,local_files_only=True)
+model=AutoModelForSequenceClassification.from_pretrained(INIT,trust_remote_code=False,local_files_only=True,use_safetensors=True,torch_dtype=torch.float32,attn_implementation='sdpa')
 assert model.config.num_labels==len(labels)
 model.config.id2label={i:l for i,l in enumerate(labels)}; model.config.label2id=L2I
 model=model.cuda(); mask=mask.cuda()
@@ -76,9 +76,10 @@ ABR=re.compile(r"\b(TIC|WIA|KIA|IDF|CAS|QRF|EN|FRD|pax|vics?|vhcls?|w/o?|xroads|
 SLICES=dict(military_test=mte,mil_test_le8=mte[mte.n_words<=8],short_slice=st_,short_slice_le8=st_[st_.n_words<=8],
  abbrev=pd.concat([st_[st_.kind=='shorthand'],mte[mte.text.str.contains(ABR)]],ignore_index=True),no_prec_word=nwt,decoy=st_[st_.kind=='decoy'],
  short_slice_shorthand=st_[st_.kind=='shorthand'])
-PROBES=json.load(open(os.path.join(R,'p2c','probes.json')))+json.load(open(os.path.join(R,'p2c','chief_inputs.json')))
+_ci=os.path.join(R,'p2c','chief_inputs.json')
+if not os.path.isfile(_ci): _ci=os.path.join(R,'p2c','probe_inputs.json')
+PROBES=json.load(open(os.path.join(R,'p2c','probes.json')))+json.load(open(_ci))
 PROBES+=['FLASH FLASH. Troops in contact grid NV 4512 6789, enemy platoon with RPGs, request immediate fire support. Over.']
-import re as _re
 @torch.no_grad()
 def slice_eval(Tt,Tp):
     model.eval(); out={}
@@ -183,7 +184,7 @@ p1res=dict(n=len(ev),accuracy=float(ev.correct.mean()),ece=ece(ev.conf,ev.correc
 td=p1res['per_source'].get('typed_decisions',{}).get('acc')
 flash=mp_res['per_class']['Flash']['recall']
 after=slice_eval(Tt,Tp); json.dump(after,open(os.path.join(LIVE,'after_p2c_slices.json'),'w'),indent=1)
-pb={p['text']:p for p in after['probes']}; CH=json.load(open(os.path.join(R,'p2c','chief_inputs.json')))
+pb={p['text']:p for p in after['probes']}; CH=json.load(open(_ci))
 orig_flash=PROBES[-1]
 tgt=dict(mil_type_acc=mt_res['accuracy']>=0.98,mil_prec_acc=mp_res['accuracy']>=0.95,flash_recall=flash>=0.95,
  ece_temp_scaled=max(mt_res['ece_temp_scaled'],mp_res['ece_temp_scaled'])<=0.08,p1_acc=p1res['accuracy']>=0.862,p1_ece=p1res['ece']<=0.08,typed_decisions=(td or 0)>=0.65,
@@ -197,7 +198,7 @@ res=dict(label='AI Eval curated benchmark',smoke=bool(a.smoke_seconds),eval_capp
  phase1_rescore=p1res,typed_decisions_acc=td,targets_met=tgt,all_targets_met=all(tgt.values()),slices_before_p2b=before,slices_after_p2c=after,
  peak_vram_gb=round(torch.cuda.max_memory_allocated()/2**30,2),reserved_gb=round(torch.cuda.max_memory_reserved()/2**30,2),args=vars(a))
 if not a.smoke_seconds:
-    os.makedirs(OUT,exist_ok=True); model.save_pretrained(OUT); tok.save_pretrained(OUT); json.dump(labels,open(os.path.join(OUT,'labels.json'),'w'))
+    os.makedirs(OUT,exist_ok=True); model.save_pretrained(OUT,safe_serialization=True); tok.save_pretrained(OUT); json.dump(labels,open(os.path.join(OUT,'labels.json'),'w'))
     json.dump(dict(mil_type=Tt,mil_prec=Tp),open(os.path.join(OUT,'temperature.json'),'w')); res['checkpoint']=OUT
     json.dump(res,open(os.path.join(OUT,'metrics.json'),'w'),indent=1)
 json.dump(res,open(os.path.join(LIVE,'metrics.json'),'w'),indent=1)

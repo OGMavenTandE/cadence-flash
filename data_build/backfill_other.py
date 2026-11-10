@@ -1,6 +1,6 @@
 import random,json,re,collections as C,concurrent.futures as cf
 from gen_lib import gem
-from templates import grid,unit,dtg,pick
+from templates import grid,unit,pick
 random.seed(1013)
 def other2():
     p=pick("Flash","Immediate","Priority","Routine")

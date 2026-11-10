@@ -46,8 +46,8 @@ torch.manual_seed(13)
 mask=torch.full((len(groups),len(labels)),float('-inf'))
 for l,i in L2I.items(): mask[G2I[gname(l)],i]=0
 GT,GP=G2I['mil_type'],G2I['mil_prec']
-tok=AutoTokenizer.from_pretrained(INIT)
-model=AutoModelForSequenceClassification.from_pretrained(INIT,torch_dtype=torch.float32,attn_implementation='sdpa')
+tok=AutoTokenizer.from_pretrained(INIT,trust_remote_code=False,local_files_only=True)
+model=AutoModelForSequenceClassification.from_pretrained(INIT,trust_remote_code=False,local_files_only=True,use_safetensors=True,torch_dtype=torch.float32,attn_implementation='sdpa')
 assert model.config.num_labels==len(labels)
 model.config.id2label={i:l for i,l in enumerate(labels)}; model.config.label2id=L2I
 model=model.cuda(); mask=mask.cuda()
@@ -141,7 +141,7 @@ res=dict(label='AI Eval curated benchmark',smoke=bool(a.smoke_seconds),eval_capp
  phase1_rescore=p1res,typed_decisions_acc=td,targets_met=tgt,
  peak_vram_gb=round(torch.cuda.max_memory_allocated()/2**30,2),reserved_gb=round(torch.cuda.max_memory_reserved()/2**30,2),args=vars(a))
 if not a.smoke_seconds:
-    os.makedirs(OUT,exist_ok=True); model.save_pretrained(OUT); tok.save_pretrained(OUT); json.dump(labels,open(os.path.join(OUT,'labels.json'),'w'))
+    os.makedirs(OUT,exist_ok=True); model.save_pretrained(OUT,safe_serialization=True); tok.save_pretrained(OUT); json.dump(labels,open(os.path.join(OUT,'labels.json'),'w'))
     json.dump(dict(mil_type=Tt,mil_prec=Tp),open(os.path.join(OUT,'temperature.json'),'w')); res['checkpoint']=OUT
     json.dump(res,open(os.path.join(OUT,'metrics.json'),'w'),indent=1)
 json.dump(res,open(os.path.join(LIVE,'metrics.json'),'w'),indent=1)

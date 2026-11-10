@@ -95,7 +95,7 @@ def gen_order(fam,prec,split,p):
     if fam=='frago': L,doc,sec=lay(FRAGO_L,split,2),SRC['FM699'],'FM 6-99 FRAGO format; FM 5-0 fragmentary order'
     elif fam=='warnord': L,doc,sec=lay(WARN_L,split,2),SRC['FM50'],'FM 5-0 warning order format'
     else: L,doc,sec=lay(OPORD_L,split,2),SRC['FM50'],'FM 5-0 operation order (five-paragraph) format'
-    i=rng.randrange(len(L)); t=rng.choice(tasks(split)); T2=re.sub(r'^(\w+?)s\b',r'\1',t).replace('assume','assume').replace('conduct ','conduct ')
+    i=rng.randrange(len(L)); t=rng.choice(tasks(split))
     T2=t.split(' ',1); T2=(T2[0][:-1] if T2[0].endswith('s') else T2[0])+' '+T2[1]
     txt=L[i].replace('{S}',sit(prec)).replace('{T}',t).replace('{T2}',T2).replace('{W}',timing(prec,split)).replace('{SU}',rng.choice(SUST))
     return F(txt,p),'FRAGO/order',prec,doc,sec,f'{fam}:{L[i][:30]}'

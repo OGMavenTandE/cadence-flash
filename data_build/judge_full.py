@@ -1,4 +1,4 @@
-import json,random,re,collections as C,concurrent.futures as cf,os,csv
+import json,random,collections as C,concurrent.futures as cf,os,csv
 from gen_lib import gem
 random.seed(7)
 S=json.load(open("full_stage1.json"));recs=S["recs"];spend=S["spend"]
@@ -31,10 +31,13 @@ st=dict(judged=len(judged),agree=len(judged)-len(bad),rate=round(1-len(bad)/max(
  by_split={sp:f"{sum(1 for r in judged if r['split']==sp and r['id'] not in bad)}/{sum(1 for r in judged if r['split']==sp)}" for sp in("train","test")},
  disagree_by_type=C.Counter(f"{r['type']}|{r['precedence']}->{res[r['id']].get('type')}|{res[r['id']].get('precedence')}" for r in judged if r["id"] in bad).most_common(15),
  sensitive=sum(1 for r in judged if res[r["id"]].get("sensitive")),judge_usd=round(jusd,2))
+def cell(v):
+    s="" if v is None else str(v)
+    return "'"+s if s[:1] in set("=+-@\t\r") else s
 with open("judge_full_flags.csv","w",newline="") as f:
     w=csv.writer(f);w.writerow(["id","split","type","precedence","judge_type","judge_precedence","reason","text"])
     for r in judged:
-        if r["id"] in bad: j=res[r["id"]];w.writerow([r["id"],r["split"],r["type"],r["precedence"],j.get("type"),j.get("precedence"),j.get("reason"),r["text"]])
+        if r["id"] in bad: j=res[r["id"]];w.writerow([cell(x) for x in (r["id"],r["split"],r["type"],r["precedence"],j.get("type"),j.get("precedence"),j.get("reason"),r["text"])])
 for r in recs: r["judge"]=("flagged" if r["id"] in bad else "pass") if r["id"] in res else "not_screened"
 final=[r for r in recs if r["judge"]!="flagged"]
 out="../final";os.makedirs(out,exist_ok=True)

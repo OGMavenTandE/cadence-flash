@@ -1,5 +1,5 @@
 # Cadence Flash phase 1: ModernBERT-large decision classifier, group-masked softmax over a shared label space.
-import os, sys, json, time, math, random, argparse
+import os, json, time, math, random, argparse
 import numpy as np, pandas as pd, torch, torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_linear_schedule_with_warmup
 ap=argparse.ArgumentParser()
@@ -19,8 +19,8 @@ for l,i in L2I.items(): mask[G2I[l.split('::')[0]],i]=0
 tr=pd.read_parquet(os.path.join(R,'mix','train.parquet')); te=pd.read_parquet(os.path.join(R,'mix','test.parquet'))
 if a.eval_cap: te=te.groupby('source').head(a.eval_cap)
 W=os.path.join(R,'weights','ModernBERT-large')
-tok=AutoTokenizer.from_pretrained(W,trust_remote_code=False)
-model=AutoModelForSequenceClassification.from_pretrained(W,num_labels=len(labels),trust_remote_code=False,torch_dtype=torch.float32,attn_implementation='sdpa').cuda()
+tok=AutoTokenizer.from_pretrained(W,trust_remote_code=False,local_files_only=True)
+model=AutoModelForSequenceClassification.from_pretrained(W,num_labels=len(labels),trust_remote_code=False,local_files_only=True,use_safetensors=True,torch_dtype=torch.float32,attn_implementation='sdpa').cuda()
 mask=mask.cuda()
 def batches(df,bs,shuffle):
     idx=list(range(len(df)));
@@ -70,5 +70,5 @@ res=dict(train_s=round(train_s),steps=step,total_steps=total,stopped=stopped,eva
  per_source={s:dict(n=len(d),acc=float(d.correct.mean()),ece=ece(d)) for s,d in ev.groupby('source')},
  peak_vram_gb=round(torch.cuda.max_memory_allocated()/2**30,2),reserved_gb=round(torch.cuda.max_memory_reserved()/2**30,2),args=vars(a))
 if not a.smoke_seconds:
-    model.save_pretrained(OUT); tok.save_pretrained(OUT); json.dump(labels,open(os.path.join(OUT,'labels.json'),'w')); res['checkpoint']=OUT
+    model.save_pretrained(OUT,safe_serialization=True); tok.save_pretrained(OUT); json.dump(labels,open(os.path.join(OUT,'labels.json'),'w')); res['checkpoint']=OUT
 json.dump(res,open(os.path.join(LIVE,'metrics.json'),'w'),indent=1); log('DONE '+json.dumps({k:res[k] for k in ['accuracy','ece','train_s','stopped']}))
